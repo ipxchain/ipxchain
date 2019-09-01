@@ -1,0 +1,45 @@
+name: truth
+version: git
+summary: Truth Daemon # 79 char long summary
+description: |
+  This snap provides the Truth daemon truth and the command line
+  tool truthcli.
+grade: stable
+confinement: strict
+
+apps:
+    truth:
+        command: bin/truth
+        plugs: [home,network,network-bind]
+    truthcli:
+        command: bin/truthcli
+        plugs: [home,network,network-bind,raw-usb]
+
+parts:
+  truth:
+    plugin: dump
+    source: ./
+    override-pull: |
+        rootdir=$(pwd)
+        gitroot=$(git rev-parse --show-toplevel)
+        cd ${gitroot} && git archive \
+            -o ${rootdir}/truth-git.tar.gz \
+            --format tar.gz -9 --prefix truth-git/ HEAD
+        cd ${rootdir}
+        tar xf truth-git.tar.gz ; rm -f truth-git.tar.gz
+        mkdir -p go/src/github.com/ipxchain bin
+        mv truth-git/ go/src/github.com/ipxchain/ipxchain/
+
+    build-snaps: [go]
+    override-build: |
+        base=`pwd`
+        export GOPATH=`pwd`/go
+        export GOBIN=$GOPATH/bin
+        export PATH=$GOBIN:$PATH
+        cd $GOPATH/src/github.com/ipxchain/ipxchain
+        make tools
+        make vendor-deps
+        make install
+        mkdir $SNAPCRAFT_PART_INSTALL/bin
+        cp $GOPATH/bin/truth $SNAPCRAFT_PART_INSTALL/bin
+        cp $GOPATH/bin/truthcli $SNAPCRAFT_PART_INSTALL/bin

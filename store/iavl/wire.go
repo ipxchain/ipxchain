@@ -1,0 +1,7 @@
+package iavl
+
+import (
+	"github.com/ipxchain/ipxchain/codec"
+)
+
+var cdc = codec.New()
